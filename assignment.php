@@ -46,6 +46,7 @@ function puassignment_add_post_submit( $atts ) {
 
 	if(isset($atts['cat'])) { $categorystr = $atts['cat']; } else { $categorystr = ""; }
 	$html = '<div class="add-post-submit-wrap">';
+	$html = '<h2>Add a Post</h2>';
 	$html .= ' <form name="" method="POST" action="" enctype="multipart/form-data">';
 	$html .= '   <p><label for="pu-assignment-submit-title">Title</label><input type="text" name="pu-assignment-submit-title" id="pu-assignment-submit-title" /></p>';
 	$html .= '   <input type="hidden" name="pu-assignment-userid" value="'.get_current_user_id().'" />';
@@ -72,62 +73,66 @@ add_shortcode( 'assignment_submit', 'puassignment_add_post_submit' );
 
 function puassignment_postlist( $atts ) {
 
-
 	if(isset($atts['display'])) { $display = $atts['display']; } else { $display = 'posts'; }
-	if(isset($atts['cat'])) { $cat_slug_string = $atts['cat']; }
-	static $w4dev_custom_loop;
-	if( !isset($w4dev_custom_loop) )
-		$w4dev_custom_loop = 1;
-	else
-		$w4dev_custom_loop ++;
+	if(isset($atts['cat'])) { $cat_slug_string = $atts['cat']; } 
 
-	$atts = shortcode_atts( array(
-		'paging'		=> 'pg'. $w4dev_custom_loop,
-		'post_type' 		=> 'post',
-		'posts_per_page' 	=> get_option('posts_per_page'),
-		'post_status' 		=> 'publish'
-	), $atts );
+	if(isset($cat_slug_string)) {
 
-	if(isset($cat_slug_string)) { 	$atts['category_name'] = $cat_slug_string;  }
+		static $w4dev_custom_loop;
+		if( !isset($w4dev_custom_loop) )
+			$w4dev_custom_loop = 1;
+		else
+			$w4dev_custom_loop ++;
 
+		$atts = shortcode_atts( array(
+			'paging'		=> 'pg'. $w4dev_custom_loop,
+			'post_type' 		=> 'post',
+			'posts_per_page' 	=> get_option('posts_per_page'),
+			'post_status' 		=> 'publish'
+		), $atts );
 
-	$paging = $atts['paging'];
-	unset( $atts['paging'] );
-
-	if( isset($_GET[$paging]) )
-		$atts['paged'] = $_GET[$paging];
-	else
-		$atts['paged'] = 1;
-
-	$html  = '';
+		if(isset($cat_slug_string)) { 	$atts['category_name'] = $cat_slug_string;  }
 
 
-	$custom_query = new WP_Query( $atts );
+		$paging = $atts['paging'];
+		unset( $atts['paging'] );
+
+		if( isset($_GET[$paging]) )
+			$atts['paged'] = $_GET[$paging];
+		else
+			$atts['paged'] = 1;
+
+		$html  = '';
 
 
-	$pagination_base = add_query_arg( $paging, '%#%' );
+		$custom_query = new WP_Query( $atts );
 
-	if( $custom_query->have_posts() && $display == 'list' ):
-	  $html = puassignment_listview($custom_query);
-	endif;
 
-	if( $custom_query->have_posts() && $display == 'grid' ):
-	  $html = puassignment_gridview($custom_query);
-	endif;
+		$pagination_base = add_query_arg( $paging, '%#%' );
 
-	if( $custom_query->have_posts() && $display == 'posts' ):
-	  $html = puassignment_postsview($custom_query);
-	endif;
+		if( $custom_query->have_posts() && $display == 'list' ):
+		  $html = puassignment_listview($custom_query);
+		endif;
 
-	$html .= paginate_links( array(
-		'type' 		=> '',
-		'base' 		=> $pagination_base,
-		'format' 	=> '?'. $paging .'=%#%',
-		'current' 	=> max( 1, $custom_query->get('paged') ),
-		'total' 	=> $custom_query->max_num_pages
-	));
+		if( $custom_query->have_posts() && $display == 'grid' ):
+		  $html = puassignment_gridview($custom_query);
+		endif;
 
-	return $html;
+		if( $custom_query->have_posts() && $display == 'posts' ):
+		  $html = puassignment_postsview($custom_query);
+		endif;
+
+		$html .= paginate_links( array(
+			'type' 		=> '',
+			'base' 		=> $pagination_base,
+			'format' 	=> '?'. $paging .'=%#%',
+			'current' 	=> max( 1, $custom_query->get('paged') ),
+			'total' 	=> $custom_query->max_num_pages
+		));
+
+		return $html;
+	}
+	else { return "Category missing from assignment_list shortcode"; }
 
 }
 add_shortcode( 'assignment_list', 'puassignment_postlist' );
@@ -257,7 +262,6 @@ function puassignment_listview($custom_query) {
 add_filter('wp_get_object_terms', function($terms, $object_ids, $taxonomies, $args)
 {
 
-
     if (!$terms && basename($_SERVER['PHP_SELF']) == 'post-new.php') {
 
 	$taxonomies = str_replace("'","",$taxonomies);
@@ -305,6 +309,7 @@ add_filter('wp_get_object_terms', function($terms, $object_ids, $taxonomies, $ar
 
 
 function puassignment_set_category () {
+
 	global $post;
   	//Check for a category parameter in our URL, and sanitize it as a string
 	$category_slug = filter_input(INPUT_GET, 'category', FILTER_SANITIZE_STRING, array("options" => array("default" => 0)));
