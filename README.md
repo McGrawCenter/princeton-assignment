@@ -1,6 +1,6 @@
 # princeton-assignment
 
-A Wordpress plugin that allows posts of a certain category to be listed on an assingment page.
+A Wordpress plugin that allows posts of a certain category to be listed on an assignment page.
 
 ## Shortcodes
 
