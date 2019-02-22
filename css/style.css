@@ -1,0 +1,20 @@
+
+
+
+
+.tile {
+  width:32%;
+  margin:0 1% 1% 0;
+  padding: 10px;
+  height:300px;
+  border:solid 1px green;
+  float:left;
+}
+
+.add-post-button {
+    padding: 10px 15px;
+    border: solid 1px grey;
+    background: white;
+    border-radius: 5px;
+    color: black;
+}
