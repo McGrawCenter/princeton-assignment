@@ -27,11 +27,42 @@ function puassignment_addpost_button( $atts ) {
 	if(isset($atts['cat'])) { $categorystr = "?category=".$atts['cat']; } else { $categorystr = ""; }
 
 	$url = site_url()."/wp-admin/post-new.php".$categorystr;
-	$html = '<a class="add-post-button" href="'.$url.'">Add Post</a>';
+	$html = '<div class="add-post-button-wrap"><a class="add-post-button" href="'.$url.'">Add Post</a></div>';
 	return $html;
 
 }
 add_shortcode( 'assignment_button', 'puassignment_addpost_button' );
+
+
+
+
+/*************** INSERT AN IN-PAGE EDITOR *****************/
+
+function puassignment_add_post_submit( $atts ) {
+  if(is_user_logged_in()) {
+
+	global $wp;
+	$current_url = home_url(add_query_arg(array(), $wp->request));
+
+	if(isset($atts['cat'])) { $categorystr = $atts['cat']; } else { $categorystr = ""; }
+	$html = '<div class="add-post-submit-wrap">';
+	$html .= ' <form name="" method="POST" action="" enctype="multipart/form-data">';
+	$html .= '   <p><label for="pu-assignment-submit-title">Title</label><input type="text" name="pu-assignment-submit-title" id="pu-assignment-submit-title" /></p>';
+	$html .= '   <input type="hidden" name="pu-assignment-userid" value="'.get_current_user_id().'" />';
+	$html .= '   <input type="hidden" name="pu-assignment-redirect" value="'.$current_url.'" />';
+	$html .= '   <input type="hidden" name="pu-assignment-submit-categories" id="pu-assignment-submit-title" value="'.$categorystr.'" />';
+	ob_start();
+	wp_editor( '', 'pu-assignment-submit-editor', array('textarea_name'=>'pu-assignment-submit-editor','editor_class'=>'pu-assignment-submit-editor','media_buttons'=>false,'teeny'=>'true') );
+	$html .=  ob_get_clean();
+	$html .= '   <p><label for="pu-assignment-submit-image">Image (optional)</label><input type="file" name="pu-assignment-submit-image" id="pu-assignment-submit-image" accept="image/*" /></p>';
+	$html .= '   <p style="margin-top:20px;text-align:right;"><input type="submit" value="Submit" /></p>';
+	$html .= ' </form>';
+	$html .= '</div>';
+	return $html;
+
+  } // end is user logged in
+}
+add_shortcode( 'assignment_submit', 'puassignment_add_post_submit' );
 
 
 
@@ -44,8 +75,6 @@ function puassignment_postlist( $atts ) {
 
 	if(isset($atts['display'])) { $display = $atts['display']; } else { $display = 'posts'; }
 	if(isset($atts['cat'])) { $cat_slug_string = $atts['cat']; }
-
-
 	static $w4dev_custom_loop;
 	if( !isset($w4dev_custom_loop) )
 		$w4dev_custom_loop = 1;
@@ -71,7 +100,6 @@ function puassignment_postlist( $atts ) {
 		$atts['paged'] = 1;
 
 	$html  = '';
-
 
 
 	$custom_query = new WP_Query( $atts );
@@ -107,56 +135,100 @@ add_shortcode( 'assignment_list', 'puassignment_postlist' );
 
 /*********** CREATE HTML FOR GRID VIEW  *****************/
 
-function puassignment_gridview($custom_query) {
+function puassignment_gridview($query) {
+  ob_start();
+	?>
+	<div class='site-main' style='clear:both;'>
+	<?php
 
-	$html = "<div class='site-main' style='clear:both;'>";
-	while( $custom_query->have_posts()) : $custom_query->the_post();
 
-		$html .= '<div id="post-337" class="tile post-337 post type-post status-publish">';
-		$html .= '<header class="entry-header">';
-		$html .= '<h3 class="entry-title"><a href="'.get_permalink().'" rel="bookmark">'.get_the_title().'</a></h3>';
-		$html .= '</header>';
-		$html .= '<div class="entry-content">';
-		//$html .= get_the_excerpt();
-		$html .= '</div>';
-		$html .= '<footer class="entry-footer">';
-		$html .= '<span class="byline">';
-		$html .= '<span class="screen-reader-text">Author </span> <a class="url fn n" href="http://localhost/wordpress/author/admin/">admin</a></span></span><span class="posted-on"><span class="screen-reader-text">Posted on </span><a href="http://localhost/wordpress/default-title/" rel="bookmark"><time class="entry-date published updated" datetime="2019-02-20T21:40:14+00:00">February 20, 2019</time></a></span><span class="cat-links"><span class="screen-reader-text">Categories </span><a href="http://localhost/wordpress/category/article/" rel="category tag">Article</a>, <a href="http://localhost/wordpress/category/learning-strategy/exams/" rel="category tag">Exams</a></span><span class="comments-link"><a href="http://localhost/wordpress/default-title/#respond">Leave a comment<span class="screen-reader-text"> on Default title</span></a></span>		<span class="edit-link"><a class="post-edit-link" href="http://localhost/wordpress/wp-admin/post.php?post=337&#038;action=edit">Edit<span class="screen-reader-text"> "Default title"</span></a></span>';
-		$html .= '</footer>';
-		$html .= '</div>';
-				
-	endwhile;
-		$html .= '<div style="clear:both"></div>';
-		$html .= '</div>';
-    return $html;
+	    // Start looping over the query results.
+	    while ( $query->have_posts() ) {
+	 
+		$query->the_post();
+	 	$thumb = get_the_post_thumbnail_url();
+		?>
+	 
+		<div class='tile' id="post-<?php the_ID(); ?>" <?php post_class( 'left' ); ?> style="background-image:url('<?php echo $thumb;?>')">
+		  <header class="entry-header">
+		    <a href="<?php the_permalink(); ?>" title="<?php the_title_attribute(); ?>">
+		    <a href="<?php the_permalink(); ?>" title="<?php the_title_attribute(); ?>">
+		       <h3 class="entry-title"><?php the_title(); ?></h3>
+		    </a>
+		        <?php 
+			//post_thumbnail( 'thumbnail' );
+			?>
+		    </a>
+		  </header>
+		  <div class="entry-content">
 
+		  </div>
+		  <div class="meta">
+		    Date: <?php echo get_the_date(); ?>
+		    <?php echo get_the_author_link(); ?>
+		  </div>
+		</div>
+	 
+		<?php
+	 
+	    }
+	    ?>
+	</div>
+	<div class='clear:both;'></div>
+    <?php
+  $html = ob_get_contents();
+  ob_end_clean();
+  return $html;
 }
 
 
 /*********** CREATE HTML FOR DEFAULT POSTS VIEW  *****************/
 
-function puassignment_postsview($custom_query) {
+function puassignment_postsview($query) {
+  ob_start();
+	?>
+	<div class='site-main' style='clear:both;'>
+	<?php
 
-	$html = "<div class='site-main'>";
-	while( $custom_query->have_posts()) : $custom_query->the_post();
 
-		$html .= '<article id="post-337" class="post-337 post type-post status-publish">';
-		$html .= '<header class="entry-header">';
-		$html .= '<h2 class="entry-title"><a href="'.get_permalink().'" rel="bookmark">'.get_the_title().'</a></h2>';
-		$html .= '</header>';
-		$html .= '<div class="entry-content">';
-		$html .= get_the_excerpt();
-		$html .= '</div>';
-		$html .= '<footer class="entry-footer">';
-		$html .= '<span class="byline">';
-		$html .= '<span class="screen-reader-text">Author </span> <a class="url fn n" href="http://localhost/wordpress/author/admin/">admin</a></span></span><span class="posted-on"><span class="screen-reader-text">Posted on </span><a href="http://localhost/wordpress/default-title/" rel="bookmark"><time class="entry-date published updated" datetime="2019-02-20T21:40:14+00:00">February 20, 2019</time></a></span><span class="cat-links"><span class="screen-reader-text">Categories </span><a href="http://localhost/wordpress/category/article/" rel="category tag">Article</a>, <a href="http://localhost/wordpress/category/learning-strategy/exams/" rel="category tag">Exams</a></span><span class="comments-link"><a href="http://localhost/wordpress/default-title/#respond">Leave a comment<span class="screen-reader-text"> on Default title</span></a></span>		<span class="edit-link"><a class="post-edit-link" href="http://localhost/wordpress/wp-admin/post.php?post=337&#038;action=edit">Edit<span class="screen-reader-text"> "Default title"</span></a></span>';
-		$html .= '</footer>';
-		$html .= '</article>';
-				
-	endwhile;
-
-    return $html;
-
+	    // Start looping over the query results.
+	    while ( $query->have_posts() ) {
+	 
+		$query->the_post();
+		?>
+		<article id="post-<?php the_ID(); ?>" <?php post_class( 'left' ); ?>>
+		  <header class="entry-header">
+		    <a class="post-thumbnail" href="<?php the_permalink(); ?>" aria-hidden="true">
+			<?php the_post_thumbnail( 'post-thumbnail', array( 'alt' => the_title_attribute( 'echo=0' ) ) ); ?>
+		    </a>
+		    <a href="<?php the_permalink(); ?>" title="<?php the_title_attribute(); ?>">
+		    <a href="<?php the_permalink(); ?>" title="<?php the_title_attribute(); ?>">
+		        <h3 class="entry-title"><?php the_title(); ?></h3>
+		    </a>
+		        <?php 
+			//post_thumbnail( 'thumbnail' );
+			?>
+		    </a>
+		  </header>
+		  <div class="entry-content">
+		    <?php the_excerpt(); ?>
+		  </div>
+		  <div class="meta">
+		    <?php echo get_the_date(); ?><br />
+		    <?php echo get_the_author_link(); ?><br />
+		  </div>
+		</article>
+	 
+		<?php
+	 
+	    }
+	    ?>
+	</div>
+	<div class='clear:both;'></div>
+    <?php
+  $html = ob_get_contents();
+  ob_end_clean();
+  return $html;
 }
 
 
@@ -174,6 +246,187 @@ function puassignment_listview($custom_query) {
 			endwhile;
 		$html .= '</ul>';
     return $html;
+}
+
+
+
+
+
+/*********** GET OBJECT TERMS  *****************/
+
+add_filter('wp_get_object_terms', function($terms, $object_ids, $taxonomies, $args)
+{
+
+
+    if (!$terms && basename($_SERVER['PHP_SELF']) == 'post-new.php') {
+
+	$taxonomies = str_replace("'","",$taxonomies);
+
+        // Category - note: only 1 category is supported currently
+        if ($taxonomies == 'category' && isset($_REQUEST['category'])) {
+
+            $id = get_cat_id($_REQUEST['category']);
+            if ($id) {
+                return array($id);
+            }
+        }
+        if ($taxonomies == 'category' && isset($_REQUEST['catid'])) {
+            $id = $_REQUEST['catid'];
+            if ($id) {
+                return array($id);
+            }
+        }
+
+        // Tags
+        if ($taxonomies == "'post_tag'" && isset($_REQUEST['tags'])) {
+            $tags = $_REQUEST['tags'];
+            $tags = is_array($tags) ? $tags : explode( ',', trim($tags, " \n\t\r\0\x0B,") );
+            $term_ids = array();
+            foreach ($tags as $term) {
+                if ( !$term_info = term_exists($term, 'post_tag') ) {
+                    // Skip if a non-existent term ID is passed.
+                    if ( is_int($term) )
+                        continue;
+                    $term_info = wp_insert_term($term, 'post_tag');
+                }
+                $term_ids[] = $term_info['term_id'];
+            }
+            return $term_ids;
+        }
+    }
+    return $terms;
+}, 10, 4);
+
+
+
+
+/************* SET CATGEORIES ON NEW POST PAGE ****************/
+
+
+
+function puassignment_set_category () {
+	global $post;
+  	//Check for a category parameter in our URL, and sanitize it as a string
+	$category_slug = filter_input(INPUT_GET, 'category', FILTER_SANITIZE_STRING, array("options" => array("default" => 0)));
+	if(strstr($category_slug, ',')) { $cat_arr = explode(',',$category_slug);} else { $cat_arr = array($category_slug); }
+
+  	//If we've got a category by that name, set the post terms for it
+       $cat_ids = array();
+       foreach($cat_arr as $slug) {
+	if ( $category = get_category_by_slug($slug) ) {
+		$cat_ids[] = $category->term_id;
+		//
+	}
+       }
+       wp_set_post_terms( $post->ID, $cat_ids, 'category' );
+}
+
+//hook it into our post-new.php specific action hook
+add_action( 'admin_head-post-new.php', 'puassignment_set_category', 10, 1 );
+
+
+
+/************* PROCESS SUBMITTED POSTS ****************/
+
+function puassignment_process_post() {
+
+     if( isset( $_POST['pu-assignment-submit-title'] ) && is_user_logged_in() ) {
+
+
+	// set the post title to be the user's submitted title
+	if(isset($_POST['pu-assignment-submit-title']) && $_POST['pu-assignment-submit-title'] != "") {
+	 $post_title = sanitize_text_field($_POST['pu-assignment-submit-title']);
+	}
+
+	// set the post content to be the user's submitted response text
+	if(isset($_POST['pu-assignment-submit-editor']) && $_POST['pu-assignment-submit-editor'] != "") {
+	  $post_content = $_POST['pu-assignment-submit-editor'];
+	}
+	else { $post_content = ""; }
+
+	$post_user_id = $_POST['pu-assignment-userid'];
+
+
+	if(isset($_POST['pu-assignment-submit-categories']) && $_POST['pu-assignment-submit-categories'] != "") {
+	   $cats = explode(',',$_POST['pu-assignment-submit-categories']);
+	   $catid_array = array();
+	   foreach($cats as $slug) {
+		$slug = trim($slug);
+		if($cat = get_category_by_slug( $slug )) {
+		  $catid_array[] = $cat->term_id;
+		}
+	   }
+	}
+
+
+
+	  $args = array(
+	    'post_title' => $post_title,
+	    'post_author' => $post_user_id,
+	    'post_content' => $post_content,
+	    'post_type' => 'post',
+	    'post_status' => 'publish',
+	    'comment_status' => 'open',
+	    'post_category'  => $catid_array,
+	    'ping_status' => 'closed'
+	  );
+
+
+	$post_id = wp_insert_post($args);
+
+	// CHECK WHICH FILES WERE INCLUDED IN THE FORM
+	if(isset($_FILES) && $_FILES['pu-assignment-submit-image']['name'] != ""  ) { 
+
+		$img_attachment = puassignment_handle_upload('pu-assignment-submit-image');
+		$featured_image_set = set_post_thumbnail($post_id, $img_attachment->id );
+		$media_id = $img_attachment->id;
+		update_post_meta( $post_id, 'Media ID', $media_id );
+		update_post_meta( $post_id, 'Media Path', $img_attachment->path );
+
+	}
+
+
+
+
+
+	// finally - redirect to the post itself
+	$redriect = $_POST['pu-assignment-redirect'];
+	if ( wp_redirect( $redriect ) ) {
+	  exit;
+	}
+
+
+
+
+     }
+}
+add_action( 'init', 'puassignment_process_post' );
+
+
+
+
+/******************************************
+ * Handle file upload
+ ******************************************/
+
+
+function puassignment_handle_upload($field_name) {
+    require_once(ABSPATH . "wp-admin" . '/includes/image.php');
+    require_once(ABSPATH . "wp-admin" . '/includes/file.php');
+    require_once(ABSPATH . "wp-admin" . '/includes/media.php');
+
+    $file_handler = $field_name;
+
+    $attach_id = media_handle_upload( $file_handler, 0 );
+    $mimetype = get_post_mime_type( $attach_id );
+    $media_url = wp_get_attachment_url($attach_id, 'full');
+    $media_path = get_attached_file( $attach_id );
+    $returnObj = new StdClass();
+    $returnObj->id = $attach_id;
+    $returnObj->mimetype = $mimetype;
+    $returnObj->url = $media_url;
+    $returnObj->path = $media_path;
+    return $returnObj;
 }
 
 

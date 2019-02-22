@@ -12,9 +12,17 @@
 }
 
 .add-post-button {
+
     padding: 10px 15px;
     border: solid 1px grey;
     background: white;
     border-radius: 5px;
     color: black;
+}
+.add-post-button-wrap {
+  margin: 10px;
+}
+
+.assignment-list-top-meta {
+ text-align:right;
 }
